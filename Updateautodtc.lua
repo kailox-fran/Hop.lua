@@ -29,55 +29,54 @@ button.Parent = frame
 
 Instance.new("UICorner", button)
 
--- ===== MAIN =====
+-- ===== MAIN LOOP =====
 button.MouseButton1Click:Connect(function()
-	farming = not farming
+    farming = not farming
 
-	if farming then
-		button.Text = "Stop Farm"
+    if farming then
+        button.Text = "Stop Farm"
 
-		spawn(function()
-			local character = player.Character or player.CharacterAdded:Wait()
-			local hrp = character:WaitForChild("HumanoidRootPart")
+        spawn(function()
+            while farming do
+                local character = player.Character or player.CharacterAdded:Wait()
+                local hrp = character:WaitForChild("HumanoidRootPart")
 
-			-- ===== DNA LOOP (25x your exact code) =====
-			for i = 1, 25 do
-				if not farming then break end
+                -- TELEPORT LOOP (locks position)
+                hrp.CFrame = CFrame.new(1532, 558, -1307)
 
-				-- teleport lock
-				hrp.CFrame = CFrame.new(1747, 728, -1021)
+                -- SAFE DNA CALL
+                local dnaFolder = workspace:FindFirstChild("Dna")
+                local dnaObj = dnaFolder and dnaFolder:FindFirstChild("Dna")
 
-				-- YOUR EXACT CODE
-				local args = {
-					workspace:WaitForChild("Dna"):WaitForChild("Dna")
-				}
-				game:GetService("ReplicatedStorage")
-					:WaitForChild("Remotes")
-					:WaitForChild("CollectDna")
-					:FireServer(unpack(args))
+                local collectRemote = ReplicatedStorage:FindFirstChild("Remotes")
+                collectRemote = collectRemote and collectRemote:FindFirstChild("CollectDna")
 
-				wait(0.2)
-			end
+                if collectRemote and dnaObj then
+                    pcall(function()
+                        collectRemote:FireServer(dnaObj)
+                    end)
+                end
 
-			-- ===== PET LOOP (3x) =====
-			for i = 1, 3 do
-				if not farming then break end
+                wait(0.2)
+            end
+        end)
 
-				hrp.CFrame = CFrame.new(1747, 728, -1021)
+        spawn(function()
+            while farming do
+                local petRemote = ReplicatedStorage:FindFirstChild("Remotes")
+                petRemote = petRemote and petRemote:FindFirstChild("ClaimAlienPet")
 
-				game:GetService("ReplicatedStorage")
-					:WaitForChild("Remotes")
-					:WaitForChild("ClaimAlienPet")
-					:FireServer()
+                if petRemote then
+                    pcall(function()
+                        petRemote:FireServer()
+                    end)
+                end
 
-				wait(0.5)
-			end
+                wait(0.5)
+            end
+        end)
 
-			farming = false
-			button.Text = "Start Farm"
-		end)
-
-	else
-		button.Text = "Start Farm"
-	end
+    else
+        button.Text = "Start Farm"
+    end
 end)
