@@ -1,4 +1,4 @@
--- Farm UI with freeze
+-- FULL FARM SCRIPT (UI + Freeze + Actions)
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -45,7 +45,7 @@ farmButton.MouseButton1Click:Connect(function()
             hrp.CFrame = CFrame.new(1747, 728, -1021)
             wait(0.5)
 
-            -- 🔒 FREEZE PLAYER
+            -- FREEZE
             hrp.Anchored = true
 
             -- Collect DNA 25 times
@@ -55,6 +55,7 @@ farmButton.MouseButton1Click:Connect(function()
                 local args = {
                     workspace:WaitForChild("Dna"):WaitForChild("Dna")
                 }
+
                 game:GetService("ReplicatedStorage")
                     :WaitForChild("Remotes")
                     :WaitForChild("CollectDna")
@@ -75,7 +76,7 @@ farmButton.MouseButton1Click:Connect(function()
                 wait(0.5)
             end
 
-            -- 🔓 UNFREEZE PLAYER
+            -- UNFREEZE
             hrp.Anchored = false
 
             farming = false
@@ -84,8 +85,8 @@ farmButton.MouseButton1Click:Connect(function()
 
     else
         farmButton.Text = "Start Farm"
-        
-        -- Safety unfreeze if stopped early
+
+        -- Safety unfreeze
         local character = player.Character
         if character and character:FindFirstChild("HumanoidRootPart") then
             character.HumanoidRootPart.Anchored = false
