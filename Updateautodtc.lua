@@ -1,6 +1,5 @@
--- FULL FARM SCRIPT (Exact args + teleport loop)
-
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
 local farming = false
@@ -20,78 +19,64 @@ frame.Parent = gui
 
 Instance.new("UICorner", frame)
 
-local farmButton = Instance.new("TextButton")
-farmButton.Size = UDim2.new(0,180,0,50)
-farmButton.Position = UDim2.new(0.5,-90,0.5,-25)
-farmButton.BackgroundColor3 = Color3.fromRGB(60,60,60)
-farmButton.TextColor3 = Color3.fromRGB(255,255,255)
-farmButton.Text = "Start Farm"
-farmButton.Parent = frame
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0,180,0,50)
+button.Position = UDim2.new(0.5,-90,0.5,-25)
+button.BackgroundColor3 = Color3.fromRGB(60,60,60)
+button.TextColor3 = Color3.fromRGB(255,255,255)
+button.Text = "Start Farm"
+button.Parent = frame
 
-Instance.new("UICorner", farmButton)
+Instance.new("UICorner", button)
 
--- ===== Logic =====
-farmButton.MouseButton1Click:Connect(function()
+-- ===== MAIN LOOP =====
+button.MouseButton1Click:Connect(function()
     farming = not farming
 
     if farming then
-        farmButton.Text = "Stop Farm"
+        button.Text = "Stop Farm"
 
         spawn(function()
-            local character = player.Character or player.CharacterAdded:Wait()
-            local hrp = character:WaitForChild("HumanoidRootPart")
+            while farming do
+                local character = player.Character or player.CharacterAdded:Wait()
+                local hrp = character:WaitForChild("HumanoidRootPart")
 
-          -- ===== DNA LOOP =====
-for i = 1, 25 do
-    if not farming then break end
+                -- TELEPORT LOOP (locks position)
+                hrp.CFrame = CFrame.new(1747, 728, -1021)
 
-    local character = player.Character or player.CharacterAdded:Wait()
-    local hrp = character:WaitForChild("HumanoidRootPart")
+                -- SAFE DNA CALL
+                local dnaFolder = workspace:FindFirstChild("Dna")
+                local dnaObj = dnaFolder and dnaFolder:FindFirstChild("Dna")
 
-    -- teleport lock
-    hrp.CFrame = CFrame.new(1747, 728, -1021)
+                local collectRemote = ReplicatedStorage:FindFirstChild("Remotes")
+                collectRemote = collectRemote and collectRemote:FindFirstChild("CollectDna")
 
-    -- get DNA object safely
-    local dnaFolder = workspace:WaitForChild("Dna", 5)
-    if not dnaFolder then
-        warn("Dna folder not found")
-        break
-    end
+                if collectRemote and dnaObj then
+                    pcall(function()
+                        collectRemote:FireServer(dnaObj)
+                    end)
+                end
 
-    local dnaObj = dnaFolder:FindFirstChild("Dna")
-    if not dnaObj then
-        warn("Dna object not found")
-        break
-    end
+                wait(0.2)
+            end
+        end)
 
-    local remote = game:GetService("ReplicatedStorage")
-        :WaitForChild("Remotes", 5)
-        :FindFirstChild("CollectDna")
+        spawn(function()
+            while farming do
+                local petRemote = ReplicatedStorage:FindFirstChild("Remotes")
+                petRemote = petRemote and petRemote:FindFirstChild("ClaimAlienPet")
 
-    if remote then
-        remote:FireServer(dnaObj)
+                if petRemote then
+                    pcall(function()
+                        petRemote:FireServer()
+                    end)
+                end
+
+                wait(0.5)
+            end
+        end)
+
     else
-        warn("CollectDna remote missing")
-        break
+        button.Text = "Start Farm"
     end
-
-    wait(0.2)
-end
-
--- ===== PET LOOP =====
-for i = 1, 3 do
-    if not farming then break end
-
-    local remote = game:GetService("ReplicatedStorage")
-        :WaitForChild("Remotes", 5)
-        :FindFirstChild("ClaimAlienPet")
-
-    if remote then
-        remote:FireServer()
-    else
-        warn("ClaimAlienPet remote missing")
-        break
-    end
-
-    wait(0.5)
-                    end
+end)
