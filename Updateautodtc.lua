@@ -1,4 +1,4 @@
--- FULL FARM SCRIPT (UI + Freeze + Actions)
+-- FULL FARM SCRIPT (Exact args + teleport loop)
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -41,21 +41,17 @@ farmButton.MouseButton1Click:Connect(function()
             local character = player.Character or player.CharacterAdded:Wait()
             local hrp = character:WaitForChild("HumanoidRootPart")
 
-            -- Teleport
-            hrp.CFrame = CFrame.new(1747, 728, -1021)
-            wait(0.5)
-
-            -- FREEZE
-            hrp.Anchored = true
-
-            -- Collect DNA 25 times
+            -- ===== DNA LOOP (25 times EXACT) =====
             for i = 1, 25 do
                 if not farming then break end
 
+                -- teleport lock
+                hrp.CFrame = CFrame.new(1747, 728, -1021)
+
+                -- YOUR EXACT CODE
                 local args = {
                     workspace:WaitForChild("Dna"):WaitForChild("Dna")
                 }
-
                 game:GetService("ReplicatedStorage")
                     :WaitForChild("Remotes")
                     :WaitForChild("CollectDna")
@@ -64,9 +60,11 @@ farmButton.MouseButton1Click:Connect(function()
                 wait(0.2)
             end
 
-            -- Claim Alien Pet 3 times
+            -- ===== PET LOOP (3 times) =====
             for i = 1, 3 do
                 if not farming then break end
+
+                hrp.CFrame = CFrame.new(1747, 728, -1021)
 
                 game:GetService("ReplicatedStorage")
                     :WaitForChild("Remotes")
@@ -76,20 +74,11 @@ farmButton.MouseButton1Click:Connect(function()
                 wait(0.5)
             end
 
-            -- UNFREEZE
-            hrp.Anchored = false
-
             farming = false
             farmButton.Text = "Start Farm"
         end)
 
     else
         farmButton.Text = "Start Farm"
-
-        -- Safety unfreeze
-        local character = player.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            character.HumanoidRootPart.Anchored = false
-        end
     end
 end)
