@@ -41,44 +41,57 @@ farmButton.MouseButton1Click:Connect(function()
             local character = player.Character or player.CharacterAdded:Wait()
             local hrp = character:WaitForChild("HumanoidRootPart")
 
-            -- ===== DNA LOOP (25 times EXACT) =====
-            for i = 1, 25 do
-                if not farming then break end
+          -- ===== DNA LOOP =====
+for i = 1, 25 do
+    if not farming then break end
 
-                -- teleport lock
-                hrp.CFrame = CFrame.new(1747, 728, -1021)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
 
-                -- YOUR EXACT CODE
-                local args = {
-                    workspace:WaitForChild("Dna"):WaitForChild("Dna")
-                }
-                game:GetService("ReplicatedStorage")
-                    :WaitForChild("Remotes")
-                    :WaitForChild("CollectDna")
-                    :FireServer(unpack(args))
+    -- teleport lock
+    hrp.CFrame = CFrame.new(1747, 728, -1021)
 
-                wait(0.2)
-            end
-
-            -- ===== PET LOOP (3 times) =====
-            for i = 1, 3 do
-                if not farming then break end
-
-                hrp.CFrame = CFrame.new(1747, 728, -1021)
-
-                game:GetService("ReplicatedStorage")
-                    :WaitForChild("Remotes")
-                    :WaitForChild("ClaimAlienPet")
-                    :FireServer()
-
-                wait(0.5)
-            end
-
-            farming = false
-            farmButton.Text = "Start Farm"
-        end)
-
-    else
-        farmButton.Text = "Start Farm"
+    -- get DNA object safely
+    local dnaFolder = workspace:WaitForChild("Dna", 5)
+    if not dnaFolder then
+        warn("Dna folder not found")
+        break
     end
-end)
+
+    local dnaObj = dnaFolder:FindFirstChild("Dna")
+    if not dnaObj then
+        warn("Dna object not found")
+        break
+    end
+
+    local remote = game:GetService("ReplicatedStorage")
+        :WaitForChild("Remotes", 5)
+        :FindFirstChild("CollectDna")
+
+    if remote then
+        remote:FireServer(dnaObj)
+    else
+        warn("CollectDna remote missing")
+        break
+    end
+
+    wait(0.2)
+end
+
+-- ===== PET LOOP =====
+for i = 1, 3 do
+    if not farming then break end
+
+    local remote = game:GetService("ReplicatedStorage")
+        :WaitForChild("Remotes", 5)
+        :FindFirstChild("ClaimAlienPet")
+
+    if remote then
+        remote:FireServer()
+    else
+        warn("ClaimAlienPet remote missing")
+        break
+    end
+
+    wait(0.5)
+                    end
