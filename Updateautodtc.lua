@@ -64,19 +64,24 @@ box.Text = ""
 box.Parent = frame
 
 local savedText = ""
+local execute = button("Execute", UDim2.fromOffset(5,170))
+local save = button("Save", UDim2.fromOffset(70,170))
+local load = button("Load", UDim2.fromOffset(135,170))
+local delete = button("Delete", UDim2.fromOffset(200,170))
 
-local function makeButton(text, x)
-	local b = Instance.new("TextButton")
-	b.Size = UDim2.fromOffset(90, 30)
-	b.Position = UDim2.new(0, x, 1, -35)
-	b.Text = text
-	b.Parent = frame
-	return b
-end
-
-local save = makeButton("Save", 10)
-local load = makeButton("Load", 110)
-local clear = makeButton("Clear", 210)
+execute.MouseButton1Click:Connect(function()
+	local scriptText = box.Text
+	
+	if scriptText ~= "" then
+		local func, err = loadstring(scriptText)
+		
+		if func then
+			pcall(func)
+		else
+			warn("Error:", err)
+		end
+	end
+end)
 
 save.MouseButton1Click:Connect(function()
 	savedText = box.Text
@@ -86,8 +91,15 @@ load.MouseButton1Click:Connect(function()
 	box.Text = savedText
 end)
 
-clear.MouseButton1Click:Connect(function()
+delete.MouseButton1Click:Connect(function()
+	savedText = ""
 	box.Text = ""
+end)
+
+copy.MouseButton1Click:Connect(function()
+	if setclipboard then
+		setclipboard(box.Text)
+	end
 end)
 
 -- Draggable
