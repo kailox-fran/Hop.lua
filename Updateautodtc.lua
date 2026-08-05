@@ -1,134 +1,151 @@
+-- [[ STANDALONE ROBLOX SCRIPT EXECUTOR UI ]] --
+-- This script programmatically creates a UI for entering and running Lua scripts.
+-- To use: Paste this entire code into a LocalScript in StarterPlayerScripts or StarterGui.
+
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local player = Players.LocalPlayer
-
-local farming = false
-
--- ===== UI =====
-local gui = Instance.new("ScreenGui")
-gui.Name = "FarmUI"
-gui.Parent = player:WaitForChild("PlayerGui")
-
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 220, 0, 120)
-frame.Position = UDim2.new(0.5, -110, 0.6, 0)
-frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-frame.Active = true
-frame.Draggable = true
-frame.Parent = gui
-
-Instance.new("UICorner", frame)
-
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(0,180,0,50)
-button.Position = UDim2.new(0.5,-90,0.5,-25)
-button.BackgroundColor3 = Color3.fromRGB(60,60,60)
-button.TextColor3 = Color3.fromRGB(255,255,255)
-button.Text = "Start Farm"
-button.Parent = frame
-
-Instance.new("UICorner", button)
-
--- ===== MAIN LOOP =====
-local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
-local gui = Instance.new("ScreenGui")
-gui.Name = "NotesGUI"
-gui.ResetOnSpawn = false
-gui.Parent = player:WaitForChild("PlayerGui")
+local playerGui = player:WaitForChild("PlayerGui")
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.fromOffset(450, 300)
-frame.Position = UDim2.fromScale(0.5, 0.5) - UDim2.fromOffset(225, 150)
-frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-frame.Parent = gui
+-- 1. Create the ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ScriptExecutorUI"
+screenGui.ResetOnSpawn = false -- Keeps UI visible after respawning
+screenGui.Parent = playerGui
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundTransparency = 1
-title.Text = "Notes"
-title.TextColor3 = Color3.new(1,1,1)
-title.Parent = frame
+-- 2. Create the Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 350, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -175, 0.5, -150)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+mainFrame.BorderSizePixel = 2
+mainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+mainFrame.Active = true
+mainFrame.Draggable = true -- Deprecated but simple for this use case
+mainFrame.Parent = screenGui
 
-local box = Instance.new("TextBox")
-box.Position = UDim2.fromOffset(10, 40)
-box.Size = UDim2.new(1, -20, 1, -90)
-box.MultiLine = true
-box.ClearTextOnFocus = false
-box.TextXAlignment = Enum.TextXAlignment.Left
-box.TextYAlignment = Enum.TextYAlignment.Top
-box.TextWrapped = false
-box.Text = ""
-box.Parent = frame
+-- Add a Title Label
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "Title"
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+titleLabel.Text = "  Script Executor"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 18
+titleLabel.Parent = mainFrame
 
+-- 3. Create the TextBox for Script Input
+local scriptBox = Instance.new("TextBox")
+scriptBox.Name = "ScriptInput"
+scriptBox.Size = UDim2.new(1, -20, 1, -85)
+scriptBox.Position = UDim2.new(0, 10, 0, 40)
+scriptBox.MultiLine = true
+scriptBox.TextWrapped = true
+scriptBox.ClearTextOnFocus = false
+scriptBox.PlaceholderText = "-- Type your script here..."
+scriptBox.Text = ""
+scriptBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+scriptBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+scriptBox.Font = Enum.Font.Code
+scriptBox.TextSize = 14
+scriptBox.TextXAlignment = Enum.TextXAlignment.Left
+scriptBox.TextYAlignment = Enum.TextYAlignment.Top
+scriptBox.Parent = mainFrame
+
+-- 4. Create a Button Container
+local buttonContainer = Instance.new("Frame")
+buttonContainer.Name = "Buttons"
+buttonContainer.Size = UDim2.new(1, -20, 0, 35)
+buttonContainer.Position = UDim2.new(0, 10, 1, -45)
+buttonContainer.BackgroundTransparency = 1
+buttonContainer.Parent = mainFrame
+
+local layout = Instance.new("UIListLayout")
+layout.FillDirection = Enum.FillDirection.Horizontal
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.Padding = UDim.new(0, 10)
+layout.Parent = buttonContainer
+
+-- Helper function to create styled buttons
+local function createBtn(name, text, color)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.Size = UDim2.new(0, 90, 1, 0)
+    btn.BackgroundColor3 = color
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 16
+    btn.BorderSizePixel = 0
+    
+    -- Rounded corners
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+    
+    btn.Parent = buttonContainer
+    return btn
+end
+
+local executeBtn = createBtn("Execute", "EXECUTE", Color3.fromRGB(0, 150, 0))
+local saveBtn    = createBtn("Save", "SAVE", Color3.fromRGB(0, 100, 200))
+local deleteBtn  = createBtn("Delete", "DELETE", Color3.fromRGB(150, 0, 0))
+
+-- 5. Script Functionality
 local savedText = ""
-local execute = button("Execute", UDim2.fromOffset(5,170))
-local save = button("Save", UDim2.fromOffset(70,170))
-local load = button("Load", UDim2.fromOffset(135,170))
-local delete = button("Delete", UDim2.fromOffset(200,170))
 
-execute.MouseButton1Click:Connect(function()
-	local scriptText = box.Text
-	
-	if scriptText ~= "" then
-		local func, err = loadstring(scriptText)
-		
-		if func then
-			pcall(func)
-		else
-			warn("Error:", err)
-		end
-	end
+-- Execute Logic
+executeBtn.MouseButton1Click:Connect(function()
+    local code = scriptBox.Text
+    if code ~= "" then
+        local func, err = loadstring(code)
+        if func then
+            local success, runErr = pcall(func)
+            if not success then
+                warn("Runtime Error: " .. tostring(runErr))
+            end
+        else
+            warn("Syntax Error: " .. tostring(err))
+        end
+    end
 end)
 
-save.MouseButton1Click:Connect(function()
-	savedText = box.Text
+-- Save Logic
+saveBtn.MouseButton1Click:Connect(function()
+    savedText = scriptBox.Text
+    print("Script saved to memory.")
 end)
 
-load.MouseButton1Click:Connect(function()
-	box.Text = savedText
+-- Delete Logic
+deleteBtn.MouseButton1Click:Connect(function()
+    scriptBox.Text = ""
+    savedText = ""
+    print("Script and memory cleared.")
 end)
 
-delete.MouseButton1Click:Connect(function()
-	savedText = ""
-	box.Text = ""
+-- Optional: Make it draggable for modern Roblox
+local dragging, dragInput, dragStart, startPos
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
 end)
 
-copy.MouseButton1Click:Connect(function()
-	if setclipboard then
-		setclipboard(box.Text)
-	end
-end)
-
--- Draggable
-local dragging = false
-local dragStart
-local startPos
-
-title.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = frame.Position
-	end
-end)
-
-UIS.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-		frame.Position = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-	end
-end)
-
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = false
-	end
-end)
+print("UI Loaded Successfully!")
