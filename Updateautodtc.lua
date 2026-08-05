@@ -30,53 +30,93 @@ button.Parent = frame
 Instance.new("UICorner", button)
 
 -- ===== MAIN LOOP =====
-button.MouseButton1Click:Connect(function()
-    farming = not farming
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
 
-    if farming then
-        button.Text = "Stop Farm"
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Name = "NotesGUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
-        spawn(function()
-            while farming do
-                local character = player.Character or player.CharacterAdded:Wait()
-                local hrp = character:WaitForChild("HumanoidRootPart")
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(450, 300)
+frame.Position = UDim2.fromScale(0.5, 0.5) - UDim2.fromOffset(225, 150)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.Parent = gui
 
-                -- TELEPORT LOOP (locks position)
-                hrp.CFrame = CFrame.new(1532, 558, -1307)
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "Notes"
+title.TextColor3 = Color3.new(1,1,1)
+title.Parent = frame
 
-                -- SAFE DNA CALL
-                local dnaFolder = workspace:FindFirstChild("Dna")
-                local dnaObj = dnaFolder and dnaFolder:FindFirstChild("Dna")
+local box = Instance.new("TextBox")
+box.Position = UDim2.fromOffset(10, 40)
+box.Size = UDim2.new(1, -20, 1, -90)
+box.MultiLine = true
+box.ClearTextOnFocus = false
+box.TextXAlignment = Enum.TextXAlignment.Left
+box.TextYAlignment = Enum.TextYAlignment.Top
+box.TextWrapped = false
+box.Text = ""
+box.Parent = frame
 
-                local collectRemote = ReplicatedStorage:FindFirstChild("Remotes")
-                collectRemote = collectRemote and collectRemote:FindFirstChild("CollectDna")
+local savedText = ""
 
-                if collectRemote and dnaObj then
-                    pcall(function()
-                        collectRemote:FireServer(dnaObj)
-                    end)
-                end
+local function makeButton(text, x)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.fromOffset(90, 30)
+	b.Position = UDim2.new(0, x, 1, -35)
+	b.Text = text
+	b.Parent = frame
+	return b
+end
 
-                wait(0.2)
-            end
-        end)
+local save = makeButton("Save", 10)
+local load = makeButton("Load", 110)
+local clear = makeButton("Clear", 210)
 
-        spawn(function()
-            while farming do
-                local petRemote = ReplicatedStorage:FindFirstChild("Remotes")
-                petRemote = petRemote and petRemote:FindFirstChild("ClaimAlienPet")
+save.MouseButton1Click:Connect(function()
+	savedText = box.Text
+end)
 
-                if petRemote then
-                    pcall(function()
-                        petRemote:FireServer()
-                    end)
-                end
+load.MouseButton1Click:Connect(function()
+	box.Text = savedText
+end)
 
-                wait(0.5)
-            end
-        end)
+clear.MouseButton1Click:Connect(function()
+	box.Text = ""
+end)
 
-    else
-        button.Text = "Start Farm"
-    end
+-- Draggable
+local dragging = false
+local dragStart
+local startPos
+
+title.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
 end)
