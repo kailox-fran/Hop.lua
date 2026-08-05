@@ -1,5 +1,6 @@
--- [[ STANDALONE ROBLOX SCRIPT EXECUTOR UI ]] --
+-- [[ STANDALONE ROBLOX SCRIPT EXECUTOR UI (V2) ]] --
 -- This script programmatically creates a UI for entering and running Lua scripts.
+-- Features: Wider, shorter design, and a toggle button to minimize/maximize the UI.
 -- To use: Paste this entire code into a LocalScript in StarterPlayerScripts or StarterGui.
 
 local Players = game:GetService("Players")
@@ -17,8 +18,8 @@ screenGui.Parent = playerGui
 -- 2. Create the Main Frame
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 350, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -175, 0.5, -150)
+mainFrame.Size = UDim2.new(0, 600, 0, 250) -- Wider and shorter
+mainFrame.Position = UDim2.new(0.5, -300, 0.5, -125) -- Center the frame
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(0, 170, 255)
@@ -29,7 +30,8 @@ mainFrame.Parent = screenGui
 -- Add a Title Label
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Name = "Title"
-titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Size = UDim2.new(1, -30, 0, 30) -- Make space for toggle button
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
 titleLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 titleLabel.Text = "  Script Executor"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -37,6 +39,41 @@ titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 18
 titleLabel.Parent = mainFrame
+
+-- Add Toggle Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Size = UDim2.new(0, 30, 0, 30)
+toggleButton.Position = UDim2.new(1, -30, 0, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Text = "_"
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 20
+toggleButton.BorderSizePixel = 0
+toggleButton.Parent = mainFrame
+
+local isMinimized = false
+local originalSize = mainFrame.Size
+local originalPosition = mainFrame.Position
+local minimizedSize = UDim2.new(0, 150, 0, 30) -- Smaller size for minimized state
+
+toggleButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        scriptBox.Visible = false
+        buttonContainer.Visible = false
+        mainFrame.Size = minimizedSize
+        mainFrame.Position = UDim2.new(originalPosition.X.Scale, originalPosition.X.Offset + (originalSize.X.Offset - minimizedSize.X.Offset), originalPosition.Y.Scale, originalPosition.Y.Offset)
+        toggleButton.Text = "[]"
+    else
+        scriptBox.Visible = true
+        buttonContainer.Visible = true
+        mainFrame.Size = originalSize
+        mainFrame.Position = originalPosition
+        toggleButton.Text = "_"
+    end
+end)
 
 -- 3. Create the TextBox for Script Input
 local scriptBox = Instance.new("TextBox")
@@ -74,7 +111,7 @@ layout.Parent = buttonContainer
 local function createBtn(name, text, color)
     local btn = Instance.new("TextButton")
     btn.Name = name
-    btn.Size = UDim2.new(0, 90, 1, 0)
+    btn.Size = UDim2.new(0, 120, 1, 0) -- Adjusted button width for wider frame
     btn.BackgroundColor3 = color
     btn.Text = text
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -102,7 +139,7 @@ local savedText = ""
 executeBtn.MouseButton1Click:Connect(function()
     local code = scriptBox.Text
     if code ~= "" then
-        local func, err = loadstring(code)
+        local func, err = pcall(loadstring, code)
         if func then
             local success, runErr = pcall(func)
             if not success then
@@ -127,24 +164,31 @@ deleteBtn.MouseButton1Click:Connect(function()
     print("Script and memory cleared.")
 end)
 
--- Optional: Make it draggable for modern Roblox
-local dragging, dragInput, dragStart, startPos
+-- Draggable functionality (using InputChanged for better control)
+local dragging
+local dragStart
+local startPosition
+
 mainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
-        startPos = mainFrame.Position
+        startPosition = mainFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.Ended then
+                dragging = false
+            end
+        end)
     end
 end)
+
 mainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if dragging then
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(startPosition.X.Scale, startPosition.X.Offset + delta.X, startPosition.Y.Scale, startPosition.Y.Offset + delta.Y)
+        end
     end
 end)
 
