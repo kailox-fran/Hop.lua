@@ -1,6 +1,6 @@
--- [[ STANDALONE ROBLOX SCRIPT EXECUTOR UI (V3) ]] --
+-- [[ STANDALONE ROBLOX SCRIPT EXECUTOR UI (V4) ]] --
 -- This script programmatically creates a UI for entering and running Lua scripts.
--- Features: Wider, shorter design, minimize/maximize toggle, and a built-in Teleport button.
+-- Features: Wider, shorter design, robust minimize/maximize toggle, and a persistent Teleport button.
 -- To use: Paste this entire code into a LocalScript in StarterPlayerScripts or StarterGui.
 
 local Players = game:GetService("Players")
@@ -15,10 +15,10 @@ screenGui.Name = "ScriptExecutorUI"
 screenGui.ResetOnSpawn = false -- Keeps UI visible after respawning
 screenGui.Parent = playerGui
 
--- 2. Create the Main Frame
+-- 2. Create the Main Frame (Overall Container)
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 650, 0, 280) -- Slightly taller to accommodate new button row
+mainFrame.Size = UDim2.new(0, 650, 0, 280) -- Wider and slightly taller
 mainFrame.Position = UDim2.new(0.5, -325, 0.5, -140) -- Center the frame
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 mainFrame.BorderSizePixel = 2
@@ -27,10 +27,18 @@ mainFrame.Active = true
 mainFrame.Draggable = true -- Deprecated but simple for this use case
 mainFrame.Parent = screenGui
 
--- Add a Title Label
+-- 3. Create Header Frame (Title and Toggle Button)
+local headerFrame = Instance.new("Frame")
+headerFrame.Name = "Header"
+headerFrame.Size = UDim2.new(1, 0, 0, 30)
+headerFrame.Position = UDim2.new(0, 0, 0, 0)
+headerFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+headerFrame.BorderSizePixel = 0
+headerFrame.Parent = mainFrame
+
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Name = "Title"
-titleLabel.Size = UDim2.new(1, -30, 0, 30) -- Make space for toggle button
+titleLabel.Size = UDim2.new(1, -30, 1, 0) -- Make space for toggle button
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
 titleLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 titleLabel.Text = "  Script Executor"
@@ -38,12 +46,11 @@ titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 18
-titleLabel.Parent = mainFrame
+titleLabel.Parent = headerFrame
 
--- Add Toggle Button
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleButton"
-toggleButton.Size = UDim2.new(0, 30, 0, 30)
+toggleButton.Size = UDim2.new(0, 30, 1, 0)
 toggleButton.Position = UDim2.new(1, -30, 0, 0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -51,37 +58,20 @@ toggleButton.Text = "_"
 toggleButton.Font = Enum.Font.SourceSansBold
 toggleButton.TextSize = 20
 toggleButton.BorderSizePixel = 0
-toggleButton.Parent = mainFrame
+toggleButton.Parent = headerFrame
 
-local isMinimized = false
-local originalSize = mainFrame.Size
-local originalPosition = mainFrame.Position
-local minimizedSize = UDim2.new(0, 150, 0, 30) -- Smaller size for minimized state
+-- 4. Create Body Frame (Script Input and Main Buttons)
+local bodyFrame = Instance.new("Frame")
+bodyFrame.Name = "Body"
+bodyFrame.Size = UDim2.new(1, 0, 1, -70) -- Space for header and footer
+bodyFrame.Position = UDim2.new(0, 0, 0, 30)
+bodyFrame.BackgroundTransparency = 1
+bodyFrame.Parent = mainFrame
 
-toggleButton.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    if isMinimized then
-        scriptBox.Visible = false
-        buttonContainer.Visible = false
-        teleportControlsFrame.Visible = false -- Hide teleport controls too
-        mainFrame.Size = minimizedSize
-        mainFrame.Position = UDim2.new(originalPosition.X.Scale, originalPosition.X.Offset + (originalSize.X.Offset - minimizedSize.X.Offset), originalPosition.Y.Scale, originalPosition.Y.Offset)
-        toggleButton.Text = "[]"
-    else
-        scriptBox.Visible = true
-        buttonContainer.Visible = true
-        teleportControlsFrame.Visible = true -- Show teleport controls
-        mainFrame.Size = originalSize
-        mainFrame.Position = originalPosition
-        toggleButton.Text = "_"
-    end
-end)
-
--- 3. Create the TextBox for Script Input
 local scriptBox = Instance.new("TextBox")
 scriptBox.Name = "ScriptInput"
-scriptBox.Size = UDim2.new(1, -20, 1, -125) -- Adjusted height for new button row
-scriptBox.Position = UDim2.new(0, 10, 0, 40)
+scriptBox.Size = UDim2.new(1, -20, 1, -45) -- Space for main buttons
+scriptBox.Position = UDim2.new(0, 10, 0, 0)
 scriptBox.MultiLine = true
 scriptBox.TextWrapped = true
 scriptBox.ClearTextOnFocus = false
@@ -93,60 +83,35 @@ scriptBox.Font = Enum.Font.Code
 scriptBox.TextSize = 14
 scriptBox.TextXAlignment = Enum.TextXAlignment.Left
 scriptBox.TextYAlignment = Enum.TextYAlignment.Top
-scriptBox.Parent = mainFrame
+scriptBox.Parent = bodyFrame
 
--- 4. Create a Button Container for Execute, Save, Delete
-local buttonContainer = Instance.new("Frame")
-buttonContainer.Name = "MainButtons"
-buttonContainer.Size = UDim2.new(1, -20, 0, 35)
-buttonContainer.Position = UDim2.new(0, 10, 1, -85) -- Position below the textbox
-buttonContainer.BackgroundTransparency = 1
-buttonContainer.Parent = mainFrame
+local mainButtonContainer = Instance.new("Frame")
+mainButtonContainer.Name = "MainButtons"
+mainButtonContainer.Size = UDim2.new(1, -20, 0, 35)
+mainButtonContainer.Position = UDim2.new(0, 10, 1, -35)
+mainButtonContainer.BackgroundTransparency = 1
+mainButtonContainer.Parent = bodyFrame
 
-local layout = Instance.new("UIListLayout")
-layout.FillDirection = Enum.FillDirection.Horizontal
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-layout.Padding = UDim.new(0, 10)
-layout.Parent = buttonContainer
+local mainButtonLayout = Instance.new("UIListLayout")
+mainButtonLayout.FillDirection = Enum.FillDirection.Horizontal
+mainButtonLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+mainButtonLayout.Padding = UDim.new(0, 10)
+mainButtonLayout.Parent = mainButtonContainer
 
--- Helper function to create styled buttons
-local function createBtn(parentFrame, name, text, color, sizeXOffset)
-    local btn = Instance.new("TextButton")
-    btn.Name = name
-    btn.Size = UDim2.new(0, sizeXOffset or 120, 1, 0) -- Adjusted button width for wider frame
-    btn.BackgroundColor3 = color
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 16
-    btn.BorderSizePixel = 0
-    
-    -- Rounded corners
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = btn
-    
-    btn.Parent = parentFrame
-    return btn
-end
+-- 5. Create Footer Frame (Teleport Controls)
+local footerFrame = Instance.new("Frame")
+footerFrame.Name = "Footer"
+footerFrame.Size = UDim2.new(1, 0, 0, 35)
+footerFrame.Position = UDim2.new(0, 0, 1, -35)
+footerFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+footerFrame.BorderSizePixel = 0
+footerFrame.Parent = mainFrame
 
-local executeBtn = createBtn(buttonContainer, "Execute", "EXECUTE", Color3.fromRGB(0, 150, 0))
-local saveBtn    = createBtn(buttonContainer, "Save", "SAVE", Color3.fromRGB(0, 100, 200))
-local deleteBtn  = createBtn(buttonContainer, "Delete", "DELETE", Color3.fromRGB(150, 0, 0))
-
--- 5. Create Teleport Controls Frame
-local teleportControlsFrame = Instance.new("Frame")
-teleportControlsFrame.Name = "TeleportControls"
-teleportControlsFrame.Size = UDim2.new(1, -20, 0, 35)
-teleportControlsFrame.Position = UDim2.new(0, 10, 1, -45) -- Position below main buttons
-teleportControlsFrame.BackgroundTransparency = 1
-teleportControlsFrame.Parent = mainFrame
-
-local teleportLayout = Instance.new("UIListLayout")
-teleportLayout.FillDirection = Enum.FillDirection.Horizontal
-teleportLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-teleportLayout.Padding = UDim.new(0, 10)
-teleportLayout.Parent = teleportControlsFrame
+local footerLayout = Instance.new("UIListLayout")
+footerLayout.FillDirection = Enum.FillDirection.Horizontal
+footerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+footerLayout.Padding = UDim.new(0, 10)
+footerLayout.Parent = footerFrame
 
 local teleportDistanceBox = Instance.new("TextBox")
 teleportDistanceBox.Name = "TeleportDistanceInput"
@@ -158,12 +123,58 @@ teleportDistanceBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 teleportDistanceBox.Font = Enum.Font.SourceSans
 teleportDistanceBox.TextSize = 14
 teleportDistanceBox.TextXAlignment = Enum.TextXAlignment.Center
-teleportDistanceBox.Parent = teleportControlsFrame
+teleportDistanceBox.Parent = footerFrame
 
-local teleportBtn = createBtn(teleportControlsFrame, "Teleport", "TELEPORT", Color3.fromRGB(200, 100, 0), 120)
+-- Helper function to create styled buttons
+local function createBtn(parentFrame, name, text, color, sizeXOffset)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.Size = UDim2.new(0, sizeXOffset or 120, 1, 0)
+    btn.BackgroundColor3 = color
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 16
+    btn.BorderSizePixel = 0
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+    
+    btn.Parent = parentFrame
+    return btn
+end
+
+local executeBtn = createBtn(mainButtonContainer, "Execute", "EXECUTE", Color3.fromRGB(0, 150, 0))
+local saveBtn    = createBtn(mainButtonContainer, "Save", "SAVE", Color3.fromRGB(0, 100, 200))
+local deleteBtn  = createBtn(mainButtonContainer, "Delete", "DELETE", Color3.fromRGB(150, 0, 0))
+local teleportBtn = createBtn(footerFrame, "Teleport", "TELEPORT", Color3.fromRGB(200, 100, 0), 120)
 
 -- 6. Script Functionality
 local savedText = ""
+
+-- Store original mainFrame dimensions for toggling
+local originalMainFrameSize = mainFrame.Size
+local originalMainFramePosition = mainFrame.Position
+local minimizedMainFrameSize = UDim2.new(originalMainFrameSize.X.Scale, originalMainFrameSize.X.Offset, 0, headerFrame.Size.Y.Offset + footerFrame.Size.Y.Offset) -- Header + Footer height
+
+-- Toggle Logic
+toggleButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        bodyFrame.Visible = false
+        mainFrame.Size = minimizedMainFrameSize
+        -- Adjust position to keep the top-left stable or center it based on preference
+        -- For now, let's keep the top edge stable, so only Y offset changes if needed
+        mainFrame.Position = UDim2.new(originalMainFramePosition.X.Scale, originalMainFramePosition.X.Offset, originalMainFramePosition.Y.Scale, originalMainFramePosition.Y.Offset)
+        toggleButton.Text = "[]"
+    else
+        bodyFrame.Visible = true
+        mainFrame.Size = originalMainFrameSize
+        mainFrame.Position = originalMainFramePosition
+        toggleButton.Text = "_"
+    end
+end)
 
 -- Execute Logic
 executeBtn.MouseButton1Click:Connect(function()
